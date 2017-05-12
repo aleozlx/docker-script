@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>720</width>
-    <height>450</height>
+    <width>977</width>
+    <height>602</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -37,24 +37,84 @@
            <widget class="QListView" name="listViewShortcuts"/>
           </item>
           <item>
-           <layout class="QVBoxLayout" name="verticalLayout_5" stretch="1,0">
+           <layout class="QVBoxLayout" name="verticalLayout_5" stretch="0,0,0,0">
             <item>
              <layout class="QFormLayout" name="formScriptDetails_4">
-              <item row="0" column="0">
+              <item row="2" column="0">
                <widget class="QLabel" name="labelDocker_4">
                 <property name="text">
                  <string>DOCKER</string>
                 </property>
                </widget>
               </item>
-              <item row="0" column="1">
-               <widget class="QLineEdit" name="lineEdit_4">
+              <item row="2" column="1">
+               <widget class="QLineEdit" name="lineEditDocker">
                 <property name="text">
-                 <string>nvidia-docker</string>
+                 <string/>
                 </property>
                </widget>
               </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="label">
+                <property name="text">
+                 <string>IMAGE</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="label_2">
+                <property name="text">
+                 <string>PORTS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0">
+               <widget class="QLabel" name="label_3">
+                <property name="text">
+                 <string>VOLUMNS</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1">
+               <widget class="QLineEdit" name="lineEditImage"/>
+              </item>
+              <item row="4" column="1">
+               <widget class="QLineEdit" name="lineEditPorts"/>
+              </item>
+              <item row="5" column="1">
+               <widget class="QLineEdit" name="lineEditVolumns"/>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="label_4">
+                <property name="text">
+                 <string>CWD</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QLabel" name="label_5">
+                <property name="text">
+                 <string>SCRIPT</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QLineEdit" name="lineEditScript"/>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="lineEditCWD"/>
+              </item>
              </layout>
+            </item>
+            <item>
+             <widget class="Line" name="line">
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPlainTextEdit" name="plainTextEditDockerCommand"/>
             </item>
             <item>
              <layout class="QHBoxLayout" name="horizontalLayout_8">
@@ -81,7 +141,14 @@
               <item>
                <widget class="QPushButton" name="pushButton_8">
                 <property name="text">
-                 <string>PushButton</string>
+                 <string>Save</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="pushButton">
+                <property name="text">
+                 <string>Reload</string>
                 </property>
                </widget>
               </item>
@@ -117,7 +184,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>720</width>
+     <width>977</width>
      <height>25</height>
     </rect>
    </property>

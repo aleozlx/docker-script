@@ -1,31 +1,43 @@
 #!/usr/bin/env python3
-import os, sys, subprocess, io, csv, re, uuid, linecache
+import os, sys, subprocess, io, csv, re, uuid, multiprocessing
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import mainwindow
 
-def get_gpuinfo(query):
-    output = subprocess.getoutput('nvidia-smi --query-gpu=%s --format=csv'%query)
-    return [row for row in csv.reader(io.StringIO(output), delimiter=',')][1:]
+rule_VAR = re.compile(r'^[A-Z_]+\s*=.*')
 
-def percentage2int(s_percent):
-    m = re.match(r'^\s*(\d+)\s*%\s*$', s_percent)
-    return int(m.group(1)) if m else 0
-
-rules = {
-    'DOCKER': re.compile(r'^DOCKER\s*=\s*(.*)$')
-}
+def argv2str(argv):
+    return '\x20'.join(map(lambda i: ("'%s'"%i) if '\x20' in i else i, argv))
 
 def parse_dockerpy(fname):
     r = dict()
+    lines = []
     with open(fname) as f:
+        s = 0
         for line in f:
-            m = rules['DOCKER'].match(line)
-            if m:
-                r['DOCKER'] = eval(m.group(1))
-                break
-    return r
+            _line = line.rstrip()
+            if _line and (s or rule_VAR.match(_line)):
+                lines.append(_line); s = 1
+            else: s = 0
+    
+    eval_script = r"""{}
+ARGV = [DOCKER, 'run', DOCKER_RUN] + PORTS + VOLUMNS + [IMAGE]
+""".format('\n'.join(lines))
+    
+    try:
+        def child(workspace, script, ret):
+            os.chdir(workspace)
+            exec(script)
+            ret.put({k:v for k,v in locals().items() if re.match('^[A-Z_]+$', k)})
+        queue = multiprocessing.Queue()
+        p = multiprocessing.Process(target=child, args=(os.path.dirname(fname), eval_script, queue))
+        p.start()
+        ret = queue.get()
+        queue.close()
+        ret['cmd'] = argv2str(ret['ARGV'])
+        return ret
+    except: pass
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -41,24 +53,22 @@ class MainWindow(QMainWindow):
         self.ui.listViewShortcuts.selectionModel().selectionChanged.connect(self.script_selected)
 
         self.ui.statusbar.showMessage("Ready")
-        
-        # timer_GPU = QtCore.QTimer(self)
-        # timer_GPU.timeout.connect(self.poll_GPU)
-        # timer_GPU.start(1000)
-        # self.poll_GPU()
 
     def script_selected(self, new_selection, old_selection):
         scripts = [i.data() for i in new_selection.first().indexes()]
         if scripts and os.path.exists(scripts[0]):
             fname = scripts[0]
-            print(parse_dockerpy(fname))
-        
-    def poll_GPU(self):
-        gpuinfo = get_gpuinfo('name,compute_mode,utilization.gpu,utilization.memory')
-        print(gpuinfo)
-        self.ui.label_GPU_name.setText(gpuinfo[0][0])
-        self.ui.progressBar_GPU_util.setValue(percentage2int(gpuinfo[0][2]))
-        self.ui.progressBar_GPU_mem.setValue(percentage2int(gpuinfo[0][3]))
+            variables = parse_dockerpy(fname)
+            if variables:
+                self.ui.lineEditScript.setText(fname)
+                self.ui.lineEditCWD.setText(os.path.dirname(fname))
+                self.ui.lineEditDocker.setText(variables['DOCKER'])
+                self.ui.lineEditImage.setText(variables['IMAGE'])
+                self.ui.lineEditPorts.setText(argv2str(variables['PORTS']))
+                self.ui.lineEditVolumns.setText(argv2str(variables['VOLUMNS']))
+                self.ui.plainTextEditDockerCommand.setPlainText(variables['cmd'])
+            else:
+                pass
 
 def get_shortcuts():
     for _fname in os.listdir(PATH_SHORTCUTS):
@@ -78,10 +88,7 @@ if __name__ == '__main__':
     PATH_SHORTCUTS = os.path.expanduser('~/.docker-script')
     if not all(list(map(check_dir, [PATH_SHORTCUTS]))):
         sys.exit(1)
-
     app = QApplication(sys.argv)
-
     my_mainWindow = MainWindow()
     my_mainWindow.show()
-
     sys.exit(app.exec_())

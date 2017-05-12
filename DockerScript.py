@@ -68,7 +68,13 @@ class MainWindow(QMainWindow):
                 self.ui.lineEditVolumns.setText(argv2str(variables['VOLUMNS']))
                 self.ui.plainTextEditDockerCommand.setPlainText(variables['cmd'])
             else:
-                pass
+                self.ui.lineEditScript.setText(fname)
+                self.ui.lineEditCWD.setText(os.path.dirname(fname))
+                self.ui.lineEditDocker.setText('')
+                self.ui.lineEditImage.setText('')
+                self.ui.lineEditPorts.setText('')
+                self.ui.lineEditVolumns.setText('')
+                self.ui.plainTextEditDockerCommand.setPlainText('<Syntax Error>')
 
 def get_shortcuts():
     for _fname in os.listdir(PATH_SHORTCUTS):

@@ -152,6 +152,13 @@
                 </property>
                </widget>
               </item>
+              <item>
+               <widget class="QPushButton" name="pushButton_2">
+                <property name="text">
+                 <string>Remove</string>
+                </property>
+               </widget>
+              </item>
              </layout>
             </item>
            </layout>
@@ -190,13 +197,19 @@
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>Fi&amp;le</string>
+     <string>&amp;File</string>
     </property>
     <addaction name="actionAddScript"/>
     <addaction name="separator"/>
     <addaction name="actionQuit"/>
    </widget>
+   <widget class="QMenu" name="menuHost">
+    <property name="title">
+     <string>Host</string>
+    </property>
+   </widget>
    <addaction name="menuFile"/>
+   <addaction name="menuHost"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionQuit">

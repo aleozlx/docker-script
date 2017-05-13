@@ -42,7 +42,7 @@ ARGV = [DOCKER, 'run', DOCKER_RUN] + PORTS + VOLUMNS + [IMAGE]
 def get_docker_images():
     with subprocess.Popen(['docker', 'images', '--format', '{{.ID}}  {{.Repository}}:{{.Tag}}'], stdout=subprocess.PIPE) as proc:
         for line in proc.stdout:
-            yield str(line.rstrip())
+            yield str(str(line, encoding = 'utf-8').rstrip())
 
 class MainWindow(QMainWindow):
     def __init__(self):

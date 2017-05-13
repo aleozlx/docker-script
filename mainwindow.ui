@@ -11,7 +11,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>DockerScript</string>
+   <string>Docker Script</string>
+  </property>
+  <property name="windowIcon">
+   <iconset>
+    <normaloff>desktop/docker-script.png</normaloff>desktop/docker-script.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">

@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab">
        <property name="sizePolicy">
@@ -146,7 +146,7 @@
                </spacer>
               </item>
               <item>
-               <widget class="QPushButton" name="pushButton_7">
+               <widget class="QPushButton" name="pushButtonRun">
                 <property name="text">
                  <string>Run</string>
                 </property>
@@ -198,14 +198,14 @@
           <item>
            <widget class="QPushButton" name="pushButton_3">
             <property name="text">
-             <string>Refresh</string>
+             <string>Reload</string>
             </property>
            </widget>
           </item>
          </layout>
         </item>
         <item>
-         <widget class="QListView" name="listView"/>
+         <widget class="QListView" name="listViewImages"/>
         </item>
        </layout>
       </widget>

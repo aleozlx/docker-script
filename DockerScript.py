@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import os, sys, subprocess, io, csv, re, uuid, multiprocessing
+import os, sys, subprocess, io, csv, re, uuid, multiprocessing, subprocess
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -39,6 +39,11 @@ ARGV = [DOCKER, 'run', DOCKER_RUN] + PORTS + VOLUMNS + [IMAGE]
         return ret
     except: pass
 
+def get_docker_images():
+    with subprocess.Popen(['docker', 'images', '--format', '{{.ID}}  {{.Repository}}:{{.Tag}}'], stdout=subprocess.PIPE) as proc:
+        for line in proc.stdout:
+            yield str(line.rstrip())
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -46,35 +51,59 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         modelShortcuts = QStandardItemModel(self.ui.listViewShortcuts)
-        for shortcut in get_shortcuts():
-            item = QStandardItem(os.path.realpath(shortcut))
-            modelShortcuts.appendRow(item)
+        for i in get_shortcuts():
+            modelShortcuts.appendRow(QStandardItem(os.path.realpath(i)))
         self.ui.listViewShortcuts.setModel(modelShortcuts)
-        self.ui.listViewShortcuts.selectionModel().selectionChanged.connect(self.script_selected)
+        self.ui.listViewShortcuts.selectionModel().selectionChanged.connect(self.on_script_selected)
 
-        self.ui.statusbar.showMessage("Ready")
+        modelImages = QStandardItemModel(self.ui.listViewImages)
+        for i in get_docker_images():
+            modelImages.appendRow(QStandardItem(i))
+        self.ui.listViewImages.setModel(modelImages)
 
-    def script_selected(self, new_selection, old_selection):
+        self.ui.pushButtonRun.clicked.connect(self.on_run)
+        self.variables = None
+        self.state = 'Initialized'
+
+    @property
+    def state(self):
+        return self.__state
+
+    @state.setter
+    def state(self, value):
+        self.__state = value
+        self.ui.statusbar.showMessage(value)
+        self.ui.pushButtonRun.setEnabled(value == 'Ready')
+
+    def on_run(self):
+        if self.state == 'Ready':
+            subprocess.run([TERM, TERM_RUN, self.variables['cmd'], TERM_WORKSPACE, self.script_workspace])
+
+    def load_vars(self, variables):
+        self.variables = variables
+        if variables:
+            self.ui.lineEditDocker.setText(variables['DOCKER'])
+            self.ui.lineEditImage.setText(variables['IMAGE'])
+            self.ui.lineEditPorts.setText(argv2str(variables['PORTS']))
+            self.ui.lineEditVolumns.setText(argv2str(variables['VOLUMNS']))
+            self.ui.plainTextEditDockerCommand.setPlainText(variables['cmd'])
+            self.state = 'Ready'
+        else:
+            self.ui.lineEditDocker.setText('')
+            self.ui.lineEditImage.setText('')
+            self.ui.lineEditPorts.setText('')
+            self.ui.lineEditVolumns.setText('')
+            self.ui.plainTextEditDockerCommand.setPlainText('<Syntax Error>')
+            self.state = 'Error'
+
+    def on_script_selected(self, new_selection, old_selection):
         scripts = [i.data() for i in new_selection.first().indexes()]
         if scripts and os.path.exists(scripts[0]):
-            fname = scripts[0]
-            variables = parse_dockerpy(fname)
-            if variables:
-                self.ui.lineEditScript.setText(fname)
-                self.ui.lineEditCWD.setText(os.path.dirname(fname))
-                self.ui.lineEditDocker.setText(variables['DOCKER'])
-                self.ui.lineEditImage.setText(variables['IMAGE'])
-                self.ui.lineEditPorts.setText(argv2str(variables['PORTS']))
-                self.ui.lineEditVolumns.setText(argv2str(variables['VOLUMNS']))
-                self.ui.plainTextEditDockerCommand.setPlainText(variables['cmd'])
-            else:
-                self.ui.lineEditScript.setText(fname)
-                self.ui.lineEditCWD.setText(os.path.dirname(fname))
-                self.ui.lineEditDocker.setText('')
-                self.ui.lineEditImage.setText('')
-                self.ui.lineEditPorts.setText('')
-                self.ui.lineEditVolumns.setText('')
-                self.ui.plainTextEditDockerCommand.setPlainText('<Syntax Error>')
+            self.script_fname = scripts[0]
+            self.script_workspace = os.path.dirname(self.script_fname)
+            self.ui.lineEditScript.setText(self.script_fname)
+            self.ui.lineEditCWD.setText(self.script_workspace)
+            self.load_vars(parse_dockerpy(self.script_fname))
 
 def get_shortcuts():
     for _fname in os.listdir(PATH_SHORTCUTS):
@@ -94,6 +123,15 @@ if __name__ == '__main__':
     PATH_SHORTCUTS = os.path.expanduser('~/.docker-script')
     if not all(list(map(check_dir, [PATH_SHORTCUTS]))):
         sys.exit(1)
+    if os.name == 'posix':
+        import platform
+        if platform.linux_distribution()[0] == 'Ubuntu':
+            TERM = 'gnome-terminal'
+            TERM_RUN = '-e'
+            TERM_WORKSPACE = '--working-directory'
+        else: sys.exit(2)
+    else: sys.exit(2)
+
     app = QApplication(sys.argv)
     my_mainWindow = MainWindow()
     my_mainWindow.show()

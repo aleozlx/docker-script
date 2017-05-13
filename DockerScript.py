@@ -5,7 +5,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 import mainwindow
 
-rule_VAR = re.compile(r'^[A-Z_]+\s*=.*')
+rule_VAR = re.compile(r'^[A-Z_]+\s*\+?=.*')
 
 def argv2str(argv):
     return '\x20'.join(map(lambda i: ("'%s'"%i) if '\x20' in i else i, argv))

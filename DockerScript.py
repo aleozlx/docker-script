@@ -122,7 +122,7 @@ def get_shortcuts():
     for _fname in os.listdir(PATH_SHORTCUTS):
         fname = os.path.join(PATH_SHORTCUTS, _fname)
         if os.path.islink(fname):
-            yield fname
+            yield os.path.realpath(fname)
 
 def check_dir(pth):
     if not os.path.isdir(pth):

@@ -39,10 +39,16 @@ ARGV = [DOCKER, 'run', DOCKER_RUN] + PORTS + VOLUMNS + [IMAGE]
         return ret
     except: pass
 
-def get_docker_images():
-    with subprocess.Popen(['docker', 'images', '--format', '{{.ID}}  {{.Repository}}:{{.Tag}}'], stdout=subprocess.PIPE) as proc:
+def shell_stream(cmd):
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE) as proc:
         for line in proc.stdout:
             yield str(str(line, encoding = 'utf-8').rstrip())
+
+def mk_list_standard_model(ui_list, data):
+    model = QStandardItemModel(ui_list)
+    for i in data:
+        model.appendRow(QStandardItem(i))
+    return model
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -50,20 +56,27 @@ class MainWindow(QMainWindow):
         self.ui = mainwindow.Ui_MainWindow()
         self.ui.setupUi(self)
 
-        modelShortcuts = QStandardItemModel(self.ui.listViewShortcuts)
-        for i in get_shortcuts():
-            modelShortcuts.appendRow(QStandardItem(os.path.realpath(i)))
-        self.ui.listViewShortcuts.setModel(modelShortcuts)
+        self.ui.listViewShortcuts.setModel(mk_list_standard_model(self.ui.listViewShortcuts, get_shortcuts()))
         self.ui.listViewShortcuts.selectionModel().selectionChanged.connect(self.on_script_selected)
 
-        modelImages = QStandardItemModel(self.ui.listViewImages)
-        for i in get_docker_images():
-            modelImages.appendRow(QStandardItem(i))
-        self.ui.listViewImages.setModel(modelImages)
+        self.on_reload_images()
+        self.on_reload_containers()
 
         self.ui.pushButtonRun.clicked.connect(self.on_run)
+        self.ui.pushButtonImagesReload.clicked.connect(self.on_reload_images)
+        self.ui.pushButtonContainersReload.clicked.connect(self.on_reload_containers)
         self.variables = None
         self.state = 'Initialized'
+
+    def on_reload_images(self):
+        # ref: https://docs.docker.com/engine/reference/commandline/images/#format-the-output
+        self.ui.listViewImages.setModel(mk_list_standard_model(self.ui.listViewImages,
+            shell_stream(['docker', 'images', '--format', '{{.ID}}  {{.Repository}}:{{.Tag}}'])))
+
+    def on_reload_containers(self):
+        # ref: https://docs.docker.com/engine/reference/commandline/ps/#formatting
+        self.ui.listViewContainers.setModel(mk_list_standard_model(self.ui.listViewContainers,
+            shell_stream(['docker', 'ps', '--filter', 'status=running', '--format', '{{.ID}}  {{.Image}} {{.Ports}}  {{.Status}}'])))
 
     @property
     def state(self):

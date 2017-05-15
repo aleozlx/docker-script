@@ -50,6 +50,14 @@ def mk_list_standard_model(ui_list, data):
         model.appendRow(QStandardItem(i))
     return model
 
+def get_gpuinfo(query):
+    output = subprocess.getoutput('nvidia-smi --query-gpu=%s --format=csv'%query)
+    return [row for row in csv.reader(io.StringIO(output), delimiter=',')][1:]
+
+def percentage2int(s_percent):
+    m = re.match(r'^\s*(\d+)\s*%\s*$', s_percent)
+    return int(m.group(1)) if m else 0
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super(MainWindow, self).__init__()
@@ -66,7 +74,19 @@ class MainWindow(QMainWindow):
         self.ui.pushButtonImagesReload.clicked.connect(self.on_reload_images)
         self.ui.pushButtonContainersReload.clicked.connect(self.on_reload_containers)
         self.variables = None
+
+        timerGPU = QTimer(self)
+        timerGPU.timeout.connect(self.on_GPU_update)
+        timerGPU.start(1000)
+        self.on_GPU_update()
         self.state = 'Initialized'
+
+    def on_GPU_update(self):
+        gpuinfo = get_gpuinfo('name,compute_mode,utilization.gpu,utilization.memory')
+        # print(gpuinfo)
+        self.ui.labelGPUName.setText(gpuinfo[0][0])
+        self.ui.progressBarGPUUtil.setValue(percentage2int(gpuinfo[0][2]))
+        self.ui.progressBarGPUMem.setValue(percentage2int(gpuinfo[0][3]))
 
     def on_reload_images(self):
         # ref: https://docs.docker.com/engine/reference/commandline/images/#format-the-output

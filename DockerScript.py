@@ -54,6 +54,11 @@ def get_gpuinfo(query):
     output = subprocess.getoutput('nvidia-smi --query-gpu=%s --format=csv'%query)
     return [row for row in csv.reader(io.StringIO(output), delimiter=',')][1:]
 
+def get_gpuprocesses(query):
+    # nvidia-smi --query-compute-apps=pid,name,used_gpu_memory --format=csv
+    output = subprocess.getoutput('nvidia-smi --query-compute-apps=%s --format=csv'%query)
+    return [row for row in csv.reader(io.StringIO(output), delimiter=',')][1:]
+
 def percentage2int(s_percent):
     m = re.match(r'^\s*(\d+)\s*%\s*$', s_percent)
     return int(m.group(1)) if m else 0

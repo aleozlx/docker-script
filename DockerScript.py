@@ -50,6 +50,11 @@ def mk_list_standard_model(ui_list, data):
         model.appendRow(QStandardItem(i))
     return model
 
+def mk_string_list_model(data):
+    model = QStringListModel()
+    model.setStringList(list(data))
+    return model
+
 def get_gpuinfo(query):
     output = subprocess.getoutput('nvidia-smi --query-gpu=%s --format=csv'%query)
     return [row for row in csv.reader(io.StringIO(output), delimiter=',')][1:]
@@ -58,6 +63,10 @@ def get_gpuprocesses(query):
     # nvidia-smi --query-compute-apps=pid,name,used_gpu_memory --format=csv
     output = subprocess.getoutput('nvidia-smi --query-compute-apps=%s --format=csv'%query)
     return [row for row in csv.reader(io.StringIO(output), delimiter=',')][1:]
+
+def get_docker_images(output_format = '{{.ID}}  {{.Repository}}:{{.Tag}}'):
+    # ref: https://docs.docker.com/engine/reference/commandline/images/#format-the-output
+    return shell_stream(['docker', 'images', '--format', output_format])
 
 def percentage2int(s_percent):
     m = re.match(r'^\s*(\d+)\s*%\s*$', s_percent)
@@ -84,7 +93,16 @@ class MainWindow(QMainWindow):
         timerGPU.timeout.connect(self.on_GPU_update)
         timerGPU.start(1000)
         self.on_GPU_update()
+
+        self.ui.lineEditSearchImages.textChanged.connect(self.on_search_images)
         self.state = 'Initialized'
+
+    def on_search_images(self):
+        keyword = self.ui.lineEditSearchImages.text()
+        if keyword:
+            data = filter(lambda line: keyword in line, get_docker_images())
+            self.ui.listViewImages.setModel(mk_list_standard_model(self.ui.listViewImages, data))
+        else: self.on_reload_images()
 
     def on_GPU_update(self):
         gpuinfo = get_gpuinfo('name,compute_mode,utilization.gpu,utilization.memory')
@@ -94,9 +112,11 @@ class MainWindow(QMainWindow):
         self.ui.progressBarGPUMem.setValue(percentage2int(gpuinfo[0][3]))
 
     def on_reload_images(self):
-        # ref: https://docs.docker.com/engine/reference/commandline/images/#format-the-output
-        self.ui.listViewImages.setModel(mk_list_standard_model(self.ui.listViewImages,
-            shell_stream(['docker', 'images', '--format', '{{.ID}}  {{.Repository}}:{{.Tag}}'])))
+        self.ui.lineEditSearchImages.setText('')
+        autocomplete = QCompleter()
+        autocomplete.setModel(mk_string_list_model(set(get_docker_images('{{.Repository}}:{{.Tag}}'))))
+        self.ui.lineEditSearchImages.setCompleter(autocomplete)
+        self.ui.listViewImages.setModel(mk_list_standard_model(self.ui.listViewImages, get_docker_images()))
 
     def on_reload_containers(self):
         # ref: https://docs.docker.com/engine/reference/commandline/ps/#formatting

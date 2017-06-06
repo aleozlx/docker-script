@@ -97,6 +97,9 @@ class MainWindow(QMainWindow):
         self.ui.lineEditSearchImages.textChanged.connect(self.on_search_images)
         self.state = 'Initialized'
 
+        # TODO: upgrade images list to tableView http://blog.csdn.net/sollor525/article/details/40048089
+        # self.ui.tableView.setHeaderData()
+
     def on_search_images(self):
         keyword = self.ui.lineEditSearchImages.text()
         if keyword:
